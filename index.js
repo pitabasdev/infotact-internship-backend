@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 const multer = require("multer");
 const path = require("path");
+const { format } = require("date-fns"); // Importing date-fns
 
 const app = express();
 
@@ -44,8 +45,8 @@ const formSchema = new mongoose.Schema({
   sourceOfInformation: String,
   linkedinConnection: String,
   instagramConnection: String,
-  startDate: Date,
-  endDate: Date,
+  startDate: String, // Store as String to save human-readable date
+  endDate: String, // Store as String to save human-readable date
 });
 
 const Form = mongoose.model("Form", formSchema);
@@ -68,13 +69,19 @@ app.post("/submit-form", upload.single("resume"), async (req, res) => {
     const endDate = new Date(currentDate);
     endDate.setMonth(currentDate.getMonth() + monthsToAdd);
 
-    formData.startDate = currentDate;
-    formData.endDate = endDate;
+    // Format the dates into human-readable strings
+    formData.startDate = format(currentDate, "MMMM dd, yyyy"); // Example: "November 22, 2024"
+    formData.endDate = format(endDate, "MMMM dd, yyyy"); // Example: "February 22, 2025"
+
+    console.log("Start Date:", formData.startDate); // Debugging line
+    console.log("End Date:", formData.endDate); // Debugging line
 
     const newForm = new Form(formData);
     const result = await newForm.save();
+
     res.status(200).json({ message: "Form data saved successfully!", result });
   } catch (err) {
+    console.error("Error:", err); // Log error details
     res.status(500).json({ error: "Error saving form data" });
   }
 });
