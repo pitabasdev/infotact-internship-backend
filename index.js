@@ -10,31 +10,24 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
-// Set up multer for file storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, "uploads/"); // Folder where files will be uploaded
+    cb(null, "uploads/");
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // Unique filename based on timestamp
+    cb(null, Date.now() + path.extname(file.originalname));
   },
 });
 
 const upload = multer({ storage: storage });
 
-// MongoDB connection
 mongoose
   .connect(
-    "mongodb+srv://pitabaspradhan834:pitabasp934@cluster0.p6ocoqf.mongodb.net/internshipdata?retryWrites=true&w=majority",
-    {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    }
+    "mongodb+srv://pitabaspradhan834:pitabasp934@cluster0.p6ocoqf.mongodb.net/internshipdata?retryWrites=true&w=majority"
   )
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.log("Error connecting to MongoDB:", err));
 
-// Define Schema for form data
 const formSchema = new mongoose.Schema({
   email: String,
   fullName: String,
@@ -46,50 +39,55 @@ const formSchema = new mongoose.Schema({
   whatsappNumber: String,
   skillLevel: String,
   internshipProgram: String,
-  internshipDuration: String, // Added field for internship duration
-  resume: String, // Store resume filename or URL
+  internshipDuration: String,
+  resume: String,
   sourceOfInformation: String,
   linkedinConnection: String,
   instagramConnection: String,
+  startDate: Date,
+  endDate: Date,
 });
 
 const Form = mongoose.model("Form", formSchema);
 
-// API to handle form data submission with file upload
 app.post("/submit-form", upload.single("resume"), async (req, res) => {
   try {
     const formData = req.body;
-
-    // If file is uploaded, update the resume field
     if (req.file) {
-      formData.resume = req.file.path; // Save file path in the database
+      formData.resume = req.file.path;
     }
 
-    // Create a new document in MongoDB
-    const newForm = new Form(formData);
-    await newForm.save();
+    const currentDate = new Date();
+    const durationMap = {
+      "1 Month": 1,
+      "2 Months": 2,
+      "3 Months": 3,
+    };
 
-    res.status(200).json({ message: "Form data saved successfully!" });
+    const monthsToAdd = durationMap[formData.internshipDuration] || 1;
+    const endDate = new Date(currentDate);
+    endDate.setMonth(currentDate.getMonth() + monthsToAdd);
+
+    formData.startDate = currentDate;
+    formData.endDate = endDate;
+
+    const newForm = new Form(formData);
+    const result = await newForm.save();
+    res.status(200).json({ message: "Form data saved successfully!", result });
   } catch (err) {
     res.status(500).json({ error: "Error saving form data" });
-    console.error(err);
   }
 });
 
-// API to fetch all form data
 app.get("/get-form-data", async (req, res) => {
   try {
-    // Fetch all documents from the Form collection
     const formData = await Form.find();
-
-    res.status(200).json(formData); // Send the data as JSON response
+    res.status(200).json(formData);
   } catch (err) {
     res.status(500).json({ error: "Error fetching form data" });
-    console.error(err);
   }
 });
 
-// Start the Express server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
