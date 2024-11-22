@@ -24,10 +24,13 @@ const upload = multer({ storage: storage });
 
 // MongoDB connection
 mongoose
-  .connect("mongodb+srv://pitabaspradhan834:pitabasp934@cluster0.p6ocoqf.mongodb.net/internshipdata?retryWrites=true&w=majority", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(
+    "mongodb+srv://pitabaspradhan834:pitabasp934@cluster0.p6ocoqf.mongodb.net/internshipdata?retryWrites=true&w=majority",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
   .then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.log("Error connecting to MongoDB:", err));
 
@@ -43,6 +46,7 @@ const formSchema = new mongoose.Schema({
   whatsappNumber: String,
   skillLevel: String,
   internshipProgram: String,
+  internshipDuration: String, // Added field for internship duration
   resume: String, // Store resume filename or URL
   sourceOfInformation: String,
   linkedinConnection: String,
@@ -71,6 +75,8 @@ app.post("/submit-form", upload.single("resume"), async (req, res) => {
     console.error(err);
   }
 });
+
+// API to fetch all form data
 app.get("/get-form-data", async (req, res) => {
   try {
     // Fetch all documents from the Form collection
